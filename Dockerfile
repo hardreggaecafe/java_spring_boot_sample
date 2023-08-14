@@ -1,9 +1,15 @@
-FROM amazoncorretto:17 AS build
-COPY ./ /home/app
-RUN cd /home/app
-RUN ./gradlew build
+#
+# Build stage
+#
+FROM maven:3.6.0-jdk-11-slim AS build
+COPY src /home/app/src
+COPY pom.xml /home/app
+RUN mvn -f /home/app/pom.xml clean package
 
-FROM amazoncorretto:17-alpine
-COPY --from=build /home/app/build/libs/spring-render-deploy-0.0.1-SNAPSHOT.jar /usr/local/lib/spring-render-deploy.jar
+#
+# Package stage
+#
+FROM openjdk:11-jre-slim
+COPY --from=build /home/app/target/Falcon-0.0.1.jar /usr/local/lib/falcon.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","-Dfile.encoding=UTF-8","/usr/local/lib/spring-render-deploy.jar"]
+ENTRYPOINT ["java","-jar","/usr/local/lib/falcon.jar"]
